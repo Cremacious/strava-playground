@@ -20,6 +20,9 @@ export default function Home() {
         >
           Sign In
         </button>
+        <a href="/api/strava/auth">
+          <button>Connect with Strava</button>
+        </a>
       </div>
     </main>
   );
