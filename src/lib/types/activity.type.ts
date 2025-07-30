@@ -12,8 +12,8 @@ export type Activity = {
   type: string;
   sportType: string;
   workoutType?: number | null;
-  startDate: string; // ISO string or Date
-  startDateLocal: string; // ISO string or Date
+  startDate: string; 
+  startDateLocal: string; 
   timezone?: string;
   utcOffset?: number;
   locationCity?: string;
