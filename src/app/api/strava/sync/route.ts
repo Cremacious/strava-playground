@@ -6,7 +6,20 @@ import { Activity } from '@/lib/types/activity.type';
 export async function POST(request: NextRequest) {
   const { accessToken, userId } = await request.json();
 
-  const activities: Activity[] = await getStravaActivities(accessToken);
+  const activitiesRaw = await getStravaActivities(accessToken);
+  const activities: Activity[] = activitiesRaw.map((act) => ({
+    id: act.id.toString(),
+    userId,
+    name: act.name,
+    distance: act.distance,
+    movingTime: act.moving_time,
+    elapsedTime: act.elapsed_time,
+    type: act.type,
+    sportType: act.sport_type,
+    startDate: act.start_date,
+    startDateLocal: act.start_date_local,
+    totalElevationGain: act.total_elevation_gain ?? 0,
+  }));
 
   const latest = await prisma.activity.findFirst({
     where: { userId },
@@ -22,6 +35,9 @@ export async function POST(request: NextRequest) {
       })
     : activities;
 
+  console.log(
+    `Syncing ${newActivities.length} new activities for user ${userId}`
+  );
   let synced = 0;
   for (const act of newActivities) {
     // Defensive: skip if required fields are missing or invalid
@@ -34,6 +50,7 @@ export async function POST(request: NextRequest) {
       act.elapsedTime === undefined ||
       !act.sportType
     ) {
+      console.log('Skipping activity due to missing/invalid fields:', act);
       continue;
     }
 
@@ -51,6 +68,7 @@ export async function POST(request: NextRequest) {
           name: act.name,
           distance: act.distance,
           movingTime: act.movingTime,
+          
           elapsedTime: act.elapsedTime,
           type: act.type,
           sportType: act.sportType,
@@ -60,7 +78,7 @@ export async function POST(request: NextRequest) {
           utcOffset: act.utcOffset,
           averageSpeed: act.averageSpeed,
           maxSpeed: act.maxSpeed,
-          totalElevationGain: act.totalElevationGain,
+           totalElevationGain: act.totalElevationGain ?? 0,
           mapId: act.map?.id,
           summaryPolyline: act.map?.summary_polyline,
           resourceState: act.resourceState ?? 2,

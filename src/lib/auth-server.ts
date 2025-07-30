@@ -9,6 +9,6 @@ export async function getCurrentUser() {
     return null;
   }
 
-  console.log('session', session);
+  
   return session.user;
 }
