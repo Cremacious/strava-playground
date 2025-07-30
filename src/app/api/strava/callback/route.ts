@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       );
     }
     return NextResponse.redirect(
-      new URL(`/dashboard?access_token=${tokenData.access_token}`, url.origin)
+      new URL(`/dashboard/sync?access_token=${tokenData.access_token}`, url.origin)
     );
   } catch (error) {
     console.error('Strava token exchange failed:', error);
