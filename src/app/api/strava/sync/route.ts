@@ -1,24 +1,73 @@
 import { getStravaActivities } from '@/lib/actions/strava.actions';
 import prisma from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { Activity } from '@/lib/types/activity.type';
+import { Activity, StravaActivity } from '@/lib/types/activity.type';
 
 export async function POST(request: NextRequest) {
   const { accessToken, userId } = await request.json();
 
-  const activitiesRaw = await getStravaActivities(accessToken);
+  const activitiesRaw: StravaActivity[] = await getStravaActivities(
+    accessToken
+  );
   const activities: Activity[] = activitiesRaw.map((act) => ({
-    id: act.id.toString(),
+    id: act.id?.toString() ?? '',
     userId,
-    name: act.name,
-    distance: act.distance,
-    movingTime: act.moving_time,
-    elapsedTime: act.elapsed_time,
-    type: act.type,
-    sportType: act.sport_type,
-    startDate: act.start_date,
-    startDateLocal: act.start_date_local,
+    resourceState: act.resource_state ?? 2,
+    athleteId: act.athlete?.id ?? undefined,
+    athleteResourceState: act.athlete?.resource_state ?? undefined,
+    name: act.name ?? '',
+    distance: act.distance ?? 0,
+    movingTime: act.moving_time ?? 0,
+    elapsedTime: act.elapsed_time ?? 0,
     totalElevationGain: act.total_elevation_gain ?? 0,
+    type: act.type ?? '',
+    sportType: act.sport_type ?? '',
+    workoutType: act.workout_type ?? null,
+    startDate: act.start_date ?? '',
+    startDateLocal: act.start_date_local ?? '',
+    timezone: '', 
+    utcOffset: 0, 
+    locationCity: act.location_city ?? '',
+    locationState: act.location_state ?? '',
+    locationCountry: act.location_country ?? '',
+    achievementCount: act.achievement_count ?? 0,
+    kudosCount: act.kudos_count ?? 0,
+    commentCount: act.comment_count ?? 0,
+    athleteCount: act.athlete_count ?? 1,
+    photoCount: act.photo_count ?? 0,
+    mapId: act.map?.id ?? '',
+    summaryPolyline: act.map?.summary_polyline ?? '',
+    mapResourceState: act.map?.resource_state ?? undefined,
+    trainer: act.trainer ?? false,
+    commute: act.commute ?? false,
+    manual: act.manual ?? false,
+    private: act.private ?? false,
+    visibility: act.visibility ?? '',
+    flagged: act.flagged ?? false,
+    gearId: act.gear_id ?? '',
+    startLat: act.start_latlng?.[0] ?? undefined,
+    startLng: act.start_latlng?.[1] ?? undefined,
+    endLat: act.end_latlng?.[0] ?? undefined,
+    endLng: act.end_latlng?.[1] ?? undefined,
+    averageSpeed: act.average_speed ?? 0,
+    maxSpeed: act.max_speed ?? 0,
+    hasHeartrate: act.has_heartrate ?? false,
+    averageHeartrate: act.average_heartrate ?? null,
+    maxHeartrate: act.max_heartrate ?? null,
+    heartrateOptOut: act.heartrate_opt_out ?? false,
+    displayHideHeartrateOption: act.display_hide_heartrate_option ?? false,
+    elevHigh: act.elev_high ?? undefined,
+    elevLow: act.elev_low ?? undefined,
+    uploadId: act.upload_id ?? null,
+    uploadIdStr: act.upload_id_str ?? '',
+    externalId: act.external_id ?? '',
+    fromAcceptedTag: act.from_accepted_tag ?? false,
+    prCount: act.pr_count ?? 0,
+    totalPhotoCount: act.total_photo_count ?? 0,
+    hasKudoed: act.has_kudoed ?? false,
+    createdAt: act.created_at ?? '',
+    updatedAt: act.updated_at ?? '',
+    map: act.map ?? {},
   }));
 
   const latest = await prisma.activity.findFirst({
@@ -28,7 +77,6 @@ export async function POST(request: NextRequest) {
 
   const newActivities = latest
     ? activities.filter((a) => {
-        // Defensive: skip if missing or invalid date
         if (!a.startDate || isNaN(new Date(a.startDate).getTime()))
           return false;
         return new Date(a.startDate) > latest.startDate;
@@ -40,7 +88,6 @@ export async function POST(request: NextRequest) {
   );
   let synced = 0;
   for (const act of newActivities) {
-    // Defensive: skip if required fields are missing or invalid
     if (
       !act.startDate ||
       isNaN(new Date(act.startDate).getTime()) ||
@@ -60,7 +107,6 @@ export async function POST(request: NextRequest) {
         update: {
           name: act.name,
           distance: act.distance,
-          // ...other fields as needed
         },
         create: {
           id: act.id.toString(),
@@ -68,7 +114,7 @@ export async function POST(request: NextRequest) {
           name: act.name,
           distance: act.distance,
           movingTime: act.movingTime,
-          
+
           elapsedTime: act.elapsedTime,
           type: act.type,
           sportType: act.sportType,
@@ -78,7 +124,7 @@ export async function POST(request: NextRequest) {
           utcOffset: act.utcOffset,
           averageSpeed: act.averageSpeed,
           maxSpeed: act.maxSpeed,
-           totalElevationGain: act.totalElevationGain ?? 0,
+          totalElevationGain: act.totalElevationGain ?? 0,
           mapId: act.map?.id,
           summaryPolyline: act.map?.summary_polyline,
           resourceState: act.resourceState ?? 2,
